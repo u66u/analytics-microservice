@@ -1,4 +1,5 @@
-use actix_web::{App, HttpResponse, HttpServer, Responder, error, web};
+use actix_cors::Cors;
+use actix_web::{App, HttpResponse, HttpServer, Responder, error, web, http};
 use chrono::{DateTime, Utc};
 use rdkafka::config::ClientConfig;
 use rdkafka::producer::{FutureProducer, FutureRecord};
@@ -36,6 +37,7 @@ async fn handle_event(
     event: web::Json<EventPayload>,
     producer: web::Data<FutureProducer>,
 ) -> Result<HttpResponse, error::Error> {
+    println!("Received event: {:?}", event);
     let internal_event = EventInternal {
         user_id: event.user_id,
         event_ts: Utc::now(),
@@ -63,7 +65,10 @@ async fn handle_event(
         .await;
 
     match &status {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Ok(_) => {
+            println!("Message sent successfully. Payload: {}, status: {:?}", payload_str, &status);
+            Ok(HttpResponse::Ok().finish())
+        }
         Err((e, _owned_message)) => {
             eprintln!("Failed to produce message: {}, status: {:?}", e, &status);
 
@@ -74,6 +79,7 @@ async fn handle_event(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
     let producer: FutureProducer = ClientConfig::new()
         .set(
             "bootstrap.servers",
@@ -93,6 +99,11 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Cors::default()
+                .allowed_origin("http://localhost:5173") // Your Vite dev server URL
+                .allowed_methods(vec!["POST"])
+                .allowed_headers(vec![http::header::CONTENT_TYPE])
+                .max_age(3600))
             .app_data(web::Data::new(producer.clone()))
             .route("/event", web::post().to(handle_event))
     })
