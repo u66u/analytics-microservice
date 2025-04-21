@@ -63,13 +63,7 @@ async fn handle_event(
         .await;
 
     match &status {
-        Ok((partition, offset)) => {
-            println!(
-                "Produced message. Payload: {}, status: {:?}",
-                payload_str, &status
-            );
-            Ok(HttpResponse::Ok().finish())
-        }
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err((e, _owned_message)) => {
             eprintln!("Failed to produce message: {}, status: {:?}", e, &status);
 
