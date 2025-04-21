@@ -1,10 +1,16 @@
 version: '3.8'
 
+networks:
+  app-network:
+    external: true 
+
 services:
   kafka-1:
     image: apache/kafka:latest
     hostname: kafka-1
     container_name: kafka-1
+    networks:
+      - app-network 
     ports:
       - "29092:9092"
     volumes:
@@ -30,6 +36,8 @@ services:
     image: apache/kafka:latest
     hostname: kafka-2
     container_name: kafka-2
+    networks:
+      - app-network 
     ports:
       - "39092:9092"
     volumes:
@@ -55,6 +63,8 @@ services:
     image: apache/kafka:latest
     hostname: kafka-3
     container_name: kafka-3
+    networks:
+      - app-network 
     ports:
       - "49092:9092"
     volumes:
@@ -79,6 +89,8 @@ services:
   redpanda-console:
     image: docker.redpanda.com/redpandadata/console:latest
     container_name: redpanda-console
+    networks:
+      - app-network 
     ports:
       - "8080:8080"
     environment:

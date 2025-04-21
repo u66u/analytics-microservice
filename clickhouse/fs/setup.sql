@@ -1,4 +1,4 @@
-CREATE DATABASE analytics;
+CREATE DATABASE IF NOT EXISTS analytics;
 SET allow_experimental_object_type = 1;;
 
 CREATE TABLE analytics.events
@@ -49,4 +49,4 @@ SELECT
     event_type,
     action,
     info
-FROM analytics.events_kafka_queue;
+FROM analytics.queue;

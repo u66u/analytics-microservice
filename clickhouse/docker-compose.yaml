@@ -1,14 +1,22 @@
 version: '3.8'
+
+networks:
+  app-network:
+    external: true 
+
 services:
   clickhouse:
     image: 'clickhouse/clickhouse-server:${CHVER:-latest}'
     user: '101:101'
     container_name: clickhouse
     hostname: clickhouse
+    networks:
+      - app-network 
     volumes:
       - ${PWD}/fs/volumes/clickhouse/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
       - ${PWD}/fs/volumes/clickhouse/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
       - ${PWD}/fs/setup.sql:/setup.sql:ro
+      - clickhouse_data:/var/lib/clickhouse
     ports:
       - '127.0.0.1:8123:8123'
       - '127.0.0.1:9000:9000'
@@ -17,16 +25,34 @@ services:
     command: >
       bash -c "
       clickhouse-server --config-file=/etc/clickhouse-server/config.xml &
-      sleep 5 &&
-      clickhouse-client --multiquery < /setup.sql &&
-      wait
+      server_pid=$$! &&
+      echo 'Waiting for ClickHouse server (PID $$server_pid) to start listening on port 9000...' &&
+      while ! clickhouse-client --host 127.0.0.1 --query 'SELECT 1' > /dev/null 2>&1; do sleep 1; done &&
+      echo 'ClickHouse server started. Applying schema...' &&
+      clickhouse-client -u ${CLICKHOUSE_USER:-default} --multiquery < /setup.sql &&
+      echo 'Schema applied. Tailing server log.' &&
+      wait $$server_pid
       "
+    healthcheck:
+        test: ["CMD", "clickhouse-client", "-u", "${CLICKHOUSE_USER:-default}", "--query", "SELECT 1"]
+        interval: 10s
+        timeout: 5s
+        retries: 3
+
   clickhouse-keeper:
     image: 'clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}'
     user: '101:101'
     container_name: clickhouse-keeper
     hostname: clickhouse-keeper
+    networks:
+      - app-network 
     volumes:
       - ${PWD}/fs/volumes/clickhouse-keeper/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+      - clickhouse_keeper_data:/var/lib/clickhouse-keeper
     ports:
       - '127.0.0.1:9181:9181'
+      - '127.0.0.1:9281:9281'
+
+volumes:
+  clickhouse_data:
+  clickhouse_keeper_data:
