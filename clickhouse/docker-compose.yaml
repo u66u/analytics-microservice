@@ -8,11 +8,19 @@ services:
     volumes:
       - ${PWD}/fs/volumes/clickhouse/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
       - ${PWD}/fs/volumes/clickhouse/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ${PWD}/fs/setup.sql:/setup.sql:ro
     ports:
       - '127.0.0.1:8123:8123'
       - '127.0.0.1:9000:9000'
     depends_on:
       - clickhouse-keeper
+    command: >
+      bash -c "
+      clickhouse-server --config-file=/etc/clickhouse-server/config.xml &
+      sleep 5 &&
+      clickhouse-client --multiquery < /setup.sql &&
+      wait
+      "
   clickhouse-keeper:
     image: 'clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}'
     user: '101:101'
