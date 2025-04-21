@@ -100,7 +100,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Cors::default()
-                .allowed_origin("http://localhost:5173") // Your Vite dev server URL
+                .allowed_origin("http://localhost:5173") // for Vite dev server URL
                 .allowed_methods(vec!["POST"])
                 .allowed_headers(vec![http::header::CONTENT_TYPE])
                 .max_age(3600))

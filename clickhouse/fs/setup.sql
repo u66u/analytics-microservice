@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS analytics;
 SET allow_experimental_object_type = 1;;
 
-CREATE TABLE analytics.events
+CREATE TABLE IF NOT EXISTS analytics.events
 (
     user_id UInt64,
     event_ts DateTime64(3),
@@ -15,7 +15,7 @@ ORDER BY (user_id, event_type, action, event_ts)
 SETTINGS index_granularity = 8192;
 
 
-CREATE TABLE analytics.queue
+CREATE TABLE IF NOT EXISTS analytics.queue
 (
     user_id UInt64,
     event_ts DateTime64(3),
@@ -35,7 +35,7 @@ SETTINGS
     kafka_max_block_size = 65536,
     kafka_thread_per_consumer = 1;
 
-CREATE MATERIALIZED VIEW analytics.view TO analytics.events
+CREATE MATERIALIZED VIEW IF NOT EXISTS analytics.view TO analytics.events
 (
     `user_id` UInt64,
     `event_ts` DateTime64(3),
